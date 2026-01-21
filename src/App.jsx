@@ -62,8 +62,6 @@ export default function App() {
 
     try {
       // แปลง Username เป็น Email (เพราะ Firebase บังคับใช้อีเมล)
-      // สมมติว่า User พิมพ์แค่ "admin" เราจะเติม "@test.com" ให้เองอัตโนมัติ
-      // หรือถ้าเขาพิมพ์อีเมลมาเต็มๆ ก็ใช้ได้เลย
       const emailToUse = username.includes('@') ? username : `${username}@test.com`;
 
       const userCredential = await signInWithEmailAndPassword(auth, emailToUse, password);
@@ -117,7 +115,6 @@ export default function App() {
       
       const fetchedData = [];
       querySnapshot.forEach((doc) => {
-        // นำข้อมูลออกมา และแถม ID ของเอกสารไปด้วย (เผื่อใช้)
         fetchedData.push({ id: doc.id, ...doc.data() });
       });
 
@@ -125,7 +122,6 @@ export default function App() {
 
     } catch (err) {
       console.error("Failed to fetch data", err);
-      // กรณี ErrorPermission (มักเกิดจากลืมตั้ง Rules หรือ Index)
       if (err.code === 'permission-denied') {
         alert("Permission Denied: ตรวจสอบ Firestore Rules ใน Console");
       }
@@ -224,3 +220,102 @@ export default function App() {
       </div>
     );
   }
+
+  // --- ส่วน Dashboard ที่น่าจะหายไปในการก๊อปปี้ครั้งก่อน ---
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans">
+      <nav className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-2">
+              <div className="bg-orange-600 p-1.5 rounded-lg">
+                <Database className="text-white w-5 h-5" />
+              </div>
+              <span className="font-bold text-gray-800 text-lg hidden sm:block">Firebase System</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">
+                <UserCircle className="w-4 h-4 text-orange-500" />
+                <span className="hidden sm:inline">ผู้ใช้: </span>
+                <b className="text-orange-700">{user?.username}</b>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-gray-500 hover:text-red-600 transition-colors p-2"
+                title="ออกจากระบบ"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">ข้อมูลส่วนตัวของคุณ (Firestore)</h1>
+            <p className="text-gray-500 mt-1 text-sm">
+              ดึงข้อมูลจาก Collection "data" ที่ username = <b>{user?.username}</b>
+            </p>
+          </div>
+          <button 
+            onClick={() => fetchData(user?.username)}
+            disabled={dataLoading}
+            className="text-sm text-orange-600 hover:text-orange-800 font-medium bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-all flex items-center gap-2"
+          >
+             {dataLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+             รีเฟรชข้อมูล
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[300px]">
+          {dataLoading ? (
+            <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
+               <Loader2 className="w-10 h-10 animate-spin text-orange-600 mb-3" />
+               <p className="font-medium">กำลังโหลดข้อมูลจาก Firebase...</p>
+            </div>
+          ) : sheetData.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {Object.keys(sheetData[0]).map((header, idx) => (
+                      <th key={idx} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {sheetData.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                      {Object.values(row).map((val, cellIdx) => (
+                        <td key={cellIdx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {typeof val === 'object' ? JSON.stringify(val) : val}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-12 text-center text-gray-400">
+              <Table className="w-16 h-16 mb-4 opacity-20" />
+              <p className="text-lg font-medium text-gray-500">ไม่พบข้อมูลของคุณ</p>
+              <div className="text-sm mt-3 bg-gray-50 p-4 rounded-lg max-w-md mx-auto text-left">
+                <p className="font-semibold text-gray-700 mb-1">สิ่งที่ต้องตรวจสอบใน Firestore:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Collection ชื่อ <code>data</code> หรือไม่?</li>
+                  <li>มี Field ชื่อ <code>username</code> ที่ค่าตรงกับ <b>"{user?.username}"</b> หรือไม่?</li>
+                  <li>ถ้าเพิ่งสร้าง Database อย่าลืมเลือก <b>"Start in test mode"</b> (หรือแก้ Rules ให้ read ได้)</li>
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
