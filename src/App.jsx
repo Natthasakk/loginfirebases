@@ -62,6 +62,8 @@ export default function App() {
 
     try {
       // แปลง Username เป็น Email (เพราะ Firebase บังคับใช้อีเมล)
+      // สมมติว่า User พิมพ์แค่ "admin" เราจะเติม "@test.com" ให้เองอัตโนมัติ
+      // หรือถ้าเขาพิมพ์อีเมลมาเต็มๆ ก็ใช้ได้เลย
       const emailToUse = username.includes('@') ? username : `${username}@test.com`;
 
       const userCredential = await signInWithEmailAndPassword(auth, emailToUse, password);
@@ -72,7 +74,7 @@ export default function App() {
 
       const userData = { 
         name: displayUsername, 
-        username: displayUsername, 
+        username: displayUsername, // ใช้ชื่อนี้ไป query ข้อมูล
         email: firebaseUser.email 
       };
       
@@ -105,6 +107,7 @@ export default function App() {
     setDataLoading(true); 
     
     try {
+      // Query ข้อมูลจาก Collection "data" ที่มี field "username" ตรงกับคนล็อกอิน
       const q = query(
         collection(db, "data"), 
         where("username", "==", userToFetch)
@@ -114,7 +117,7 @@ export default function App() {
       
       const fetchedData = [];
       querySnapshot.forEach((doc) => {
-        // id ยังคงเก็บไว้ในตัวแปร แต่เราจะซ่อนตอนแสดงผล
+        // นำข้อมูลออกมา และแถม ID ของเอกสารไปด้วย (เผื่อใช้)
         fetchedData.push({ id: doc.id, ...doc.data() });
       });
 
@@ -122,6 +125,7 @@ export default function App() {
 
     } catch (err) {
       console.error("Failed to fetch data", err);
+      // กรณี ErrorPermission (มักเกิดจากลืมตั้ง Rules หรือ Index)
       if (err.code === 'permission-denied') {
         alert("Permission Denied: ตรวจสอบ Firestore Rules ใน Console");
       }
@@ -137,13 +141,6 @@ export default function App() {
     setUsername('');
     setPassword('');
     setView('login');
-  };
-
-  // Helper เพื่อหาชื่อคอลัมน์ที่จะแสดง (กรอง id ออก)
-  const getVisibleColumns = () => {
-    if (sheetData.length === 0) return [];
-    // เอาคีย์ทั้งหมดมา แล้วกรองคำว่า 'id' ออก
-    return Object.keys(sheetData[0]).filter(key => key !== 'id');
   };
 
   // ---------------- UI Components ----------------
@@ -170,6 +167,13 @@ export default function App() {
                 <span className="text-xs opacity-90">{error}</span>
               </div>
             )}
+            
+            {(!firebaseConfig.apiKey || firebaseConfig.apiKey === "AIzaSy...") && (
+               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm text-center animate-pulse">
+                 <b>Developer Alert:</b><br/>
+                 กรุณาใส่ Firebase Config ในไฟล์ App.jsx (บรรทัดที่ 15)
+               </div>
+            )}
 
             <div className="space-y-4 pt-2">
               <div className="relative">
@@ -195,7 +199,7 @@ export default function App() {
                 />
               </div>
               <p className="text-xs text-gray-400 text-center">
-                หากพบปัญหาการใช้งานกรุณาติดต่อ
+                หากพบปัญหากรุณาติดต่อ
               </p>
             </div>
 
@@ -230,7 +234,7 @@ export default function App() {
               <div className="bg-orange-600 p-1.5 rounded-lg">
                 <Database className="text-white w-5 h-5" />
               </div>
-              <span className="font-bold text-gray-800 text-lg hidden sm:block">Firebase System</span>
+              <span className="font-bold text-gray-800 text-lg hidden sm:block">ระบบจัดแสดงข้อมูล</span>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">
@@ -253,9 +257,9 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">ข้อมูลส่วนตัวของคุณ (Firestore)</h1>
+            <h1 className="text-2xl font-bold text-gray-900">ข้อมูลส่วนตัวของคุณ</h1>
             <p className="text-gray-500 mt-1 text-sm">
-              ดึงข้อมูลจาก Collection "data" ที่ username = <b>{user?.username}</b>
+              สวัสดีคุณ <b>{user?.username}</b>
             </p>
           </div>
           <button 
@@ -279,7 +283,7 @@ export default function App() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {getVisibleColumns().map((header, idx) => (
+                    {Object.keys(sheetData[0]).map((header, idx) => (
                       <th key={idx} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         {header}
                       </th>
@@ -289,9 +293,9 @@ export default function App() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {sheetData.map((row, idx) => (
                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                      {getVisibleColumns().map((key, cellIdx) => (
+                      {Object.values(row).map((val, cellIdx) => (
                         <td key={cellIdx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {typeof row[key] === 'object' ? JSON.stringify(row[key]) : row[key]}
+                          {typeof val === 'object' ? JSON.stringify(val) : val}
                         </td>
                       ))}
                     </tr>
