@@ -143,6 +143,25 @@ export default function App() {
     setView('login');
   };
 
+  // ✅ Helper ฟังก์ชันสำหรับจัดการคอลัมน์ (ซ่อน id และเรียง username ไว้หน้า)
+  const getVisibleColumns = () => {
+    if (sheetData.length === 0) return [];
+    
+    // 1. ดึงคีย์ทั้งหมดออกมา
+    const allKeys = Object.keys(sheetData[0]);
+    
+    // 2. กรอง 'id' ออก (ไม่ว่าจะ id เล็กหรือใหญ่)
+    const filteredKeys = allKeys.filter(key => key.toLowerCase() !== 'id');
+
+    // 3. ถ้ามีคอลัมน์ 'username' ให้ย้ายมาไว้ตัวแรกสุด
+    if (filteredKeys.includes('username')) {
+      const otherKeys = filteredKeys.filter(key => key !== 'username');
+      return ['username', ...otherKeys];
+    }
+
+    return filteredKeys;
+  };
+
   // ---------------- UI Components ----------------
 
   if (view === 'login') {
@@ -252,7 +271,7 @@ export default function App() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">ข้อมูลส่วนตัวของคุณ</h1>
             <p className="text-gray-500 mt-1 text-sm">
-              สวัสดีคุณ = <b>{user?.username}</b>
+              สวัสดีคุณ <b>{user?.username}</b>
             </p>
           </div>
           <button 
@@ -276,7 +295,8 @@ export default function App() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {Object.keys(sheetData[0]).map((header, idx) => (
+                    {/* ✅ ใช้ getVisibleColumns() แทน Object.keys() */}
+                    {getVisibleColumns().map((header, idx) => (
                       <th key={idx} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         {header}
                       </th>
@@ -286,9 +306,10 @@ export default function App() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {sheetData.map((row, idx) => (
                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                      {Object.values(row).map((val, cellIdx) => (
+                      {/* ✅ ใช้ getVisibleColumns() เพื่อให้ข้อมูลตรงกับหัวข้อ */}
+                      {getVisibleColumns().map((key, cellIdx) => (
                         <td key={cellIdx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {typeof val === 'object' ? JSON.stringify(val) : val}
+                          {typeof row[key] === 'object' ? JSON.stringify(row[key]) : row[key]}
                         </td>
                       ))}
                     </tr>
