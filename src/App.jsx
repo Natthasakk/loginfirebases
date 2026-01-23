@@ -72,7 +72,7 @@ export default function App() {
 
       const userData = { 
         name: displayUsername, 
-        username: displayUsername, // ใช้ชื่อนี้ไป query ข้อมูล
+        username: displayUsername, 
         email: firebaseUser.email 
       };
       
@@ -105,7 +105,6 @@ export default function App() {
     setDataLoading(true); 
     
     try {
-      // Query ข้อมูลจาก Collection "data" ที่มี field "username" ตรงกับคนล็อกอิน
       const q = query(
         collection(db, "data"), 
         where("username", "==", userToFetch)
@@ -115,6 +114,7 @@ export default function App() {
       
       const fetchedData = [];
       querySnapshot.forEach((doc) => {
+        // id ยังคงเก็บไว้ในตัวแปร แต่เราจะซ่อนตอนแสดงผล
         fetchedData.push({ id: doc.id, ...doc.data() });
       });
 
@@ -137,6 +137,13 @@ export default function App() {
     setUsername('');
     setPassword('');
     setView('login');
+  };
+
+  // Helper เพื่อหาชื่อคอลัมน์ที่จะแสดง (กรอง id ออก)
+  const getVisibleColumns = () => {
+    if (sheetData.length === 0) return [];
+    // เอาคีย์ทั้งหมดมา แล้วกรองคำว่า 'id' ออก
+    return Object.keys(sheetData[0]).filter(key => key !== 'id');
   };
 
   // ---------------- UI Components ----------------
@@ -163,13 +170,6 @@ export default function App() {
                 <span className="text-xs opacity-90">{error}</span>
               </div>
             )}
-            
-            {(!firebaseConfig.apiKey || firebaseConfig.apiKey === "AIzaSy...") && (
-               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm text-center animate-pulse">
-                 <b>Developer Alert:</b><br/>
-                 กรุณาใส่ Firebase Config ในไฟล์ App.jsx (บรรทัดที่ 15)
-               </div>
-            )}
 
             <div className="space-y-4 pt-2">
               <div className="relative">
@@ -195,7 +195,7 @@ export default function App() {
                 />
               </div>
               <p className="text-xs text-gray-400 text-center">
-                *ระบบจะเติม @test.com ให้ username อัตโนมัติ (Mock Email)
+                หากพบปัญหาการใช้งานกรุณาติดต่อ
               </p>
             </div>
 
@@ -221,7 +221,6 @@ export default function App() {
     );
   }
 
-  // --- ส่วน Dashboard ที่น่าจะหายไปในการก๊อปปี้ครั้งก่อน ---
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -280,7 +279,7 @@ export default function App() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {Object.keys(sheetData[0]).map((header, idx) => (
+                    {getVisibleColumns().map((header, idx) => (
                       <th key={idx} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         {header}
                       </th>
@@ -290,9 +289,9 @@ export default function App() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {sheetData.map((row, idx) => (
                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                      {Object.values(row).map((val, cellIdx) => (
+                      {getVisibleColumns().map((key, cellIdx) => (
                         <td key={cellIdx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {typeof val === 'object' ? JSON.stringify(val) : val}
+                          {typeof row[key] === 'object' ? JSON.stringify(row[key]) : row[key]}
                         </td>
                       ))}
                     </tr>
