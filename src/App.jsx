@@ -167,13 +167,6 @@ export default function App() {
                 <span className="text-xs opacity-90">{error}</span>
               </div>
             )}
-            
-            {(!firebaseConfig.apiKey || firebaseConfig.apiKey === "AIzaSy...") && (
-               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm text-center animate-pulse">
-                 <b>Developer Alert:</b><br/>
-                 กรุณาใส่ Firebase Config ในไฟล์ App.jsx (บรรทัดที่ 15)
-               </div>
-            )}
 
             <div className="space-y-4 pt-2">
               <div className="relative">
@@ -234,7 +227,7 @@ export default function App() {
               <div className="bg-orange-600 p-1.5 rounded-lg">
                 <Database className="text-white w-5 h-5" />
               </div>
-              <span className="font-bold text-gray-800 text-lg hidden sm:block">ระบบจัดแสดงข้อมูล</span>
+              <span className="font-bold text-gray-800 text-lg hidden sm:block">Firebase System</span>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">
@@ -259,7 +252,7 @@ export default function App() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">ข้อมูลส่วนตัวของคุณ</h1>
             <p className="text-gray-500 mt-1 text-sm">
-              สวัสดีคุณ <b>{user?.username}</b>
+              สวัสดีคุณ = <b>{user?.username}</b>
             </p>
           </div>
           <button 
@@ -276,7 +269,7 @@ export default function App() {
           {dataLoading ? (
             <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
                <Loader2 className="w-10 h-10 animate-spin text-orange-600 mb-3" />
-               <p className="font-medium">กำลังโหลดข้อมูลจาก Firebase...</p>
+               <p className="font-medium">กำลังโหลดข้อมูล</p>
             </div>
           ) : sheetData.length > 0 ? (
             <div className="overflow-x-auto">
